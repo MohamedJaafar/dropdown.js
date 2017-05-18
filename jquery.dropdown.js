@@ -59,7 +59,8 @@
         $dropdown.append($input);
 
         // Create the UL that will be used as dropdown and cache it AS $ul
-        var $ul = $("<ul></ul>");
+        // Set translate to no as translations in select will propagate when elements are added
+        var $ul = $("<ul class=\"notranslate\" translate=\"no\"></ul>");
         $ul.data("select", $select);
 
         // Append it to the dropdown
@@ -101,7 +102,7 @@
             }
             methods._select($dropdown, $selected);
         } else {
-            var selectors = [], val = $select.val()
+            var selectors = [], val = $select.val();
             for (var i in val) {
               selectors.push(val[i]);
             }
@@ -171,20 +172,43 @@
 
         // Listen for new added options and update dropdown if needed
         $select.on("DOMNodeInserted", function(e) {
-          var $this = $(e.target);
-          if (!$this.val().length) return;
+          var $this = $(e.target),
+              existingOption,
+              value;
 
-          methods._addOption($ul, $this);
+          // Google translate may insert DOM nodes as <font>
+          if ($this.prop("tagName") !== "OPTION") {
+            $this = $this.closest("option");
+          }
+          value = $this.val();
+          if (!value.length) return;
+
+          existingOption = $ul.children().filter(function() { return $(this).data("value") === value; });
+          // Option already exists, likely subtree nodes were modified triggering this
+          if (existingOption.length) {
+            existingOption.text($this.text());
+          }
+          else {
+            methods._addOption($ul, $this);
+          }
           $ul.find("li").not(".dropdownjs-add").attr("tabindex", 0);
-
         });
 
         $select.on("DOMNodeRemoved", function(e) {
-          var deletedValue = $(e.target).attr('value');
-          $ul.find("li").filter(function() { return $(this).data("value") === deletedValue; }).remove();
-          var $selected;
-
+          // Use timeout as DOMNodeRemoved fires prior to node removal from DOM
           setTimeout(function () {
+            var deletedValue = $(e.target).attr("value"),
+                existingOption = $select.children().filter(function() { return this.value === deletedValue; }),
+                $selected;
+
+            // Option was not actually removed, likely subtree nodes were modified triggering this
+            if (existingOption.length) {
+              methods._updateLiText($ul, deletedValue, existingOption.text());
+            }
+            else {
+              $ul.find("li").filter(function() { return $(this).data("value") === deletedValue; }).remove();
+            }
+
             if ($select.find(":selected").length) {
               $selected = $select.find(":selected").last();
             }
@@ -216,8 +240,8 @@
             selectOptions.removeClass("selected");
             // Select options
             target.each(function () {
-                var selected = selectOptions.filter(function() { return $.inArray($(this).data("value"), values) !== -1; });
-                selected.addClass("selected");
+              var selected = selectOptions.filter(function() { return $.inArray($(this).data("value"), values) !== -1; });
+              selected.addClass("selected");
             });
           }
         });
@@ -265,9 +289,9 @@
 
           // Close opened dropdowns
           $(".dropdownjs > ul > li").attr("tabindex", -1);
-            if ($(e.target).hasClass('disabled')) {
-              return;
-        }
+          if ($(e.target).hasClass('disabled')) {
+            return;
+          }
           $input.removeClass("focus");
         });
       }
@@ -410,6 +434,9 @@
       } else {
         $ul.append($option);
       }
+    },
+    _updateLiText: function($ul, value, newText) {
+      $ul.find("li").filter(function() { return $(this).data("value") === value; }).text(newText);
     },
     destroy: function($e) {
       $($e).show().removeAttr('data-dropdownjs').next('.dropdownjs').remove();
