@@ -19,6 +19,7 @@
       "dropdownClass": "",
       "autoinit": false,
       "callback": false,
+      "lazyload": true,
       "onSelected": false,
       "destroy": function(element) {
         this.destroy(element);
@@ -41,14 +42,12 @@
         }
 
         // Is it a multi select?
-        var multi = $select.attr("multiple");
-
-        // Does it allow to create new options dynamically?
-        var dynamicOptions = $select.attr("data-dynamic-opts"),
-            $dynamicInput = $();
-
-        // Create the dropdown wrapper
-        var $dropdown = $("<div></div>");
+        var multi = $select.attr("multiple"),
+            // Does it allow to create new options dynamically?
+            dynamicOptions = $select.attr("data-dynamic-opts"),
+            $dynamicInput = $(),
+            // Create the dropdown wrapper
+            $dropdown = $("<div></div>");
         $dropdown.addClass("dropdownjs").addClass(options.dropdownClass);
         $dropdown.data("select", $select);
 
@@ -69,50 +68,6 @@
         // Transfer the placeholder attribute
         $input.attr("placeholder", $select.attr("placeholder"));
 
-        // Loop trough options and transfer them to the dropdown menu
-        $select.find("option").each(function() {
-          // Cache $(this)
-          var $this = $(this);
-          methods._addOption($ul, $this);
-
-        });
-
-        // If this select allows dynamic options add the widget
-        if (dynamicOptions) {
-          $dynamicInput = $("<li class=dropdownjs-add></li>");
-          $dynamicInput.append("<input>");
-          $dynamicInput.find("input").attr("placeholder", options.dynamicOptLabel);
-          $ul.append($dynamicInput);
-        }
-
-
-
-        // Cache the dropdown options
-        var selectOptions = $dropdown.find("li");
-
-        // If is a single select, selected the first one or the last with selected attribute
-        if (!multi) {
-            var $selected;
-            if ($select.find(":selected").length) {
-                $selected = $select.find(":selected").last();
-            }
-            else {
-                $selected = $select.find("option, li").first();
-               // $selected = $select.find("option").first();
-            }
-            methods._select($dropdown, $selected);
-        } else {
-            var selectors = [], val = $select.val();
-            for (var i in val) {
-              selectors.push(val[i]);
-            }
-            if (selectors.length > 0) {
-              var $target = $dropdown.find(function() { return $.inArray($(this).data("value"), selectors) !== -1; });
-              $target.removeClass("selected");
-              methods._select($dropdown, $target);
-            }
-        }
-
         // Transfer the classes of the select to the input dropdown
         $input.addClass($select[0].className);
 
@@ -121,6 +76,10 @@
 
         // Bring to life our awesome dropdownjs
         $select.after($dropdown);
+
+        if (!options.lazyload) {
+          initElementOptions($select);
+        }
 
         // Call the callback
         if (options.callback) {
@@ -176,6 +135,10 @@
               existingOption,
               value;
 
+          if (!$this.data("loaded")) {
+            return;
+          }
+
           // Google translate may insert DOM nodes as <font>
           if ($this.prop("tagName") !== "OPTION") {
             $this = $this.closest("option");
@@ -195,6 +158,10 @@
         });
 
         $select.on("DOMNodeRemoved", function(e) {
+          if (!$this.data("loaded")) {
+            return;
+          }
+
           // Use timeout as DOMNodeRemoved fires prior to node removal from DOM
           setTimeout(function () {
             var deletedValue = $(e.target).attr("value"),
@@ -224,6 +191,10 @@
         $select.on("change", function(e) {
           var $this = $(e.target);
 
+          if (!$this.data("loaded")) {
+            return;
+          }
+
           if (!multi) {
             var $selected;
             if ($select.find(":selected").length) {
@@ -252,6 +223,7 @@
           if ($select.is(":disabled")) {
             return;
           }
+          initElementOptions($select);
           $(".dropdownjs > ul > li").attr("tabindex", -1);
           $(".dropdownjs > input").not($(this)).removeClass("focus").blur();
 
@@ -263,9 +235,8 @@
             left: $(this).offset().left - $(document).scrollLeft(),
             bottom: $(window).height() - ($(this).offset().top - $(document).scrollTop()),
             right: $(window).width() - ($(this).offset().left - $(document).scrollLeft())
-          };
-
-          var height = coords.bottom;
+          },
+          height = coords.bottom;
 
           // Decide if place the dropdown below or above the input
           if (height < 200 && coords.top > coords.bottom) {
@@ -294,6 +265,59 @@
           }
           $input.removeClass("focus");
         });
+      }
+
+      function initElementOptions($select) {
+        if ($select.data("loaded")) {
+          return;
+        }
+        $select.data("loaded", true);
+        var multi = $select.attr("multiple"),
+            $dropdown = $select.next(),
+            $ul = $dropdown.find("ul"),
+            $dynamicInput = $ul.find(".dropdownjs-add"),
+            dynamicOptions = $select.attr("data-dynamic-opts"),
+            selected,
+            selectOptions;
+        // Loop trough options and transfer them to the dropdown menu
+        $select.find("option").each(function() {
+          // Cache $(this)
+          var $this = $(this);
+          methods._addOption($ul, $this);
+        });
+
+        // If this select allows dynamic options add the widget
+        if (dynamicOptions) {
+          $dynamicInput = $("<li class=dropdownjs-add></li>");
+          $dynamicInput.append("<input>");
+          $dynamicInput.find("input").attr("placeholder", options.dynamicOptLabel);
+          $ul.append($dynamicInput);
+        }
+
+        // Cache the dropdown options
+        selectOptions = $dropdown.find("li");
+
+        // If is a single select, selected the first one or the last with selected attribute
+        if (!multi) {
+          if ($select.find(":selected").length) {
+            $selected = $select.find(":selected").last();
+          }
+          else {
+            $selected = $select.find("option, li").first();
+            // $selected = $select.find("option").first();
+          }
+          methods._select($dropdown, $selected);
+        } else {
+          var selectors = [], val = $select.val();
+          for (var i in val) {
+            selectors.push(val[i]);
+          }
+          if (selectors.length > 0) {
+            var $target = $dropdown.find(function() { return $.inArray($(this).data("value"), selectors) !== -1; });
+            $target.removeClass("selected");
+            methods._select($dropdown, $target);
+          }
+        }
       }
 
       if (options.autoinit) {
