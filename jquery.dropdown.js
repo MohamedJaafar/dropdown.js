@@ -65,7 +65,7 @@
                 // Append it to the dropdown wrapper
                 $dropdown.append($input);
 
-                // Create the UL that will be used as dropdown and cache it AS $ul
+                // Create the UL that will be used as dropdown and cache it as $ul
                 // Set translate to no as translations in select will propagate when elements are added	
                 var $ul = $("<ul class=\"notranslate\" translate=\"no\" role=\"listbox\" tabindex=\"-1\"></ul>");
                 $ul.data("select", $select);
@@ -343,7 +343,7 @@
 
                 $select.data("loaded", true);
 
-                var $dropdown = $select.next(),
+                var $dropdown = $select.nextAll(".dropdownjs").first(),
                     $ul = $dropdown.find("ul"),
                     $dynamicInput,
                     dynamicOptions = $select.attr("data-dynamic-opts");
@@ -504,7 +504,7 @@
             $ul.find("li").filter(function () { return $(this).data("value") === value; }).text(newText);
         },
         destroy: function ($e) {
-            $($e).show().removeAttr('data-dropdownjs').next('.dropdownjs').remove();
+            $($e).show().removeAttr('data-dropdownjs').nextAll(".dropdownjs").first().remove();
         }
     };
 
