@@ -256,7 +256,6 @@
                             if (options.lazyload && !$select.data("loaded")) {
                                 return;
                             }
-                            // Use timeout as DOMNodeRemoved fires prior to node removal from DOM
                             setTimeout(function () {
                                 var deletedValue = $(n).attr("value"),
                                     existingOption = $select.children().filter(function () { return this.value === deletedValue; }),
