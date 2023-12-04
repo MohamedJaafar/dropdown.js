@@ -57,7 +57,7 @@
                 $dropdown.data("select", $select);
 
                 // Create the fake input used as "select" element and cache it as $input
-                var $input = $("<input type=\"text\" readonly class=\"fakeinput\" aria-haspopup=\"listbox\">");
+                var $input = $("<input type=\"text\" readonly class=\"fakeinput\" aria-haspopup=\"listbox\" aria-label=\"Option\">");
                 if ($dropdownLabel && $dropdownLabel.attr("id")) {
                     $input.attr("aria-labelledby='" + $dropdownLabel.attr("id") + "'");
                 }
@@ -67,7 +67,7 @@
 
                 // Create the UL that will be used as dropdown and cache it as $ul
                 // Set translate to no as translations in select will propagate when elements are added	
-                var $ul = $("<ul class=\"notranslate\" translate=\"no\" role=\"listbox\" tabindex=\"-1\"></ul>");
+                var $ul = $("<ul class=\"notranslate\" translate=\"no\" role=\"listbox\" tabindex=\"-1\" aria-label=\"Choose a value\"></ul>");
                 $ul.data("select", $select);
                 // Copy all aria attributes	
                 $.each([].slice.call($select.get(0).attributes).filter(function (attr) {
